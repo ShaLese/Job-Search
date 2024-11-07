@@ -28,7 +28,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install flake8 pytest
         # Install additional libraries
-        pip install streamlit beautifulsoup4 requests pandas PyPDF2 openai crewai==0.28.8 crewai_tools==0.1.6 langchain_community==0.0.29
+        pip install streamlit beautifulsoup4 requests pandas pypdf openai crewai==0.28.8 crewai_tools==0.1.6 langchain_community==0.0.29
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     - name: Lint with flake8
       run: |
