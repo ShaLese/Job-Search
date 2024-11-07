@@ -5,7 +5,7 @@ from pypdf import PdfReader
 import os
 
 # Set OpenAI API Key
-openai.api_key = "YOUR_OPENAI_API_KEY"
+openai.api_key = "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"
 
 # Function to extract job description from a URL
 def get_job_description(job_url):
