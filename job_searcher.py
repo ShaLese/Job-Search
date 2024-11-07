@@ -57,7 +57,7 @@ def tailor_resume_with_chatgpt(resume_text, job_description):
     Make sure to highlight the most important keywords from the job description and adjust the wording where necessary.
     """
     
-    response = openai.Completion.create(
+    response = openai.ChatCompletion.create(
         model="gpt-4",
         prompt=prompt,
         temperature=0.5,
@@ -78,7 +78,7 @@ def generate_cover_letter_with_chatgpt(job_description, candidate_name="Candidat
     Ensure the letter is formal, concise, and tailored specifically for the job.
     """
     
-    response = openai.Completion.create(
+    response = openai.ChatCompletion.create(
         model="gpt-4",
         prompt=prompt,
         temperature=0.5,
