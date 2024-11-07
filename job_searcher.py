@@ -1,9 +1,11 @@
 import streamlit as st
 import requests
-from bs4 import BeautifulSoup
-import pandas as pd
+import openai
 from pypdf import PdfReader
-import re
+import os
+
+# Set OpenAI API Key
+openai.api_key = "YOUR_OPENAI_API_KEY"
 
 # Function to extract job description from a URL
 def get_job_description(job_url):
@@ -24,38 +26,52 @@ def parse_resume(uploaded_resume):
         text += page.extract_text() + "\n"
     return text
 
-# Function to tailor the resume text based on job description
-def tailor_resume(resume_text, job_description):
-    # Identify key skills and requirements in the job description
-    keywords = re.findall(r'\b\w+\b', job_description.lower())
-    keywords = set([word for word in keywords if len(word) > 3])  # Filter short words
-
-    # Highlight relevant skills/keywords from the job description in the resume
-    tailored_resume = resume_text
-    for keyword in keywords:
-        tailored_resume = re.sub(rf"\b({keyword})\b", r"**\1**", tailored_resume, flags=re.IGNORECASE)
-
+# Function to interact with ChatGPT for tailoring the resume
+def tailor_resume_with_chatgpt(resume_text, job_description):
+    prompt = f"""
+    Below is the job description for a job posting:
+    {job_description}
+    
+    And here is a candidate's resume:
+    {resume_text}
+    
+    Please tailor the resume by focusing on the relevant skills, experiences, and qualifications that match the job description. 
+    Make sure to highlight the most important keywords from the job description and adjust the wording where necessary.
+    """
+    
+    response = openai.Completion.create(
+        model="gpt-4",
+        prompt=prompt,
+        temperature=0.5,
+        max_tokens=1500
+    )
+    
+    tailored_resume = response['choices'][0]['text'].strip()
     return tailored_resume
 
-# Function to generate a tailored cover letter
-def generate_cover_letter(job_description, candidate_name="Candidate"):
-    # Simple templated cover letter
-    cover_letter = f"""
-    Dear Hiring Manager,
-
-    I am excited to apply for this opportunity. With my background in data analysis and a deep understanding of the key skills outlined in the job description, I am confident that I would make a valuable addition to your team.
-
-    In particular, my experience with {job_description[:100]} has prepared me to excel in this role. I am eager to bring my skills in data-driven decision-making and analytical problem-solving to your organization.
-
-    Thank you for considering my application.
-
-    Sincerely,
-    {candidate_name}
+# Function to generate a tailored cover letter using ChatGPT
+def generate_cover_letter_with_chatgpt(job_description, candidate_name="Candidate"):
+    prompt = f"""
+    Below is a job description:
+    {job_description}
+    
+    Write a professional cover letter for this job, assuming the candidate is named {candidate_name}. 
+    Focus on the candidate's relevant experience, skills, and qualifications that align with the job description. 
+    Ensure the letter is formal, concise, and tailored specifically for the job.
     """
+    
+    response = openai.Completion.create(
+        model="gpt-4",
+        prompt=prompt,
+        temperature=0.5,
+        max_tokens=1000
+    )
+    
+    cover_letter = response['choices'][0]['text'].strip()
     return cover_letter
 
 # Streamlit UI for uploading resume and job URL input
-st.title("Tailored Resume and Cover Letter Generator")
+st.title("Tailored Resume and Cover Letter Generator with ChatGPT")
 
 uploaded_resume = st.file_uploader("Upload your resume (PDF format)", type=["pdf"])
 job_url = st.text_input("Enter the URL of the job posting")
@@ -68,20 +84,21 @@ if st.button("Generate Tailored Resume and Cover Letter"):
         # Scrape the job description from the provided URL
         job_description = get_job_description(job_url)
         
-        # Tailor the resume based on the job description
-        tailored_resume = tailor_resume(resume_text, job_description)
-        
-        # Generate a tailored cover letter
-        candidate_name = "Candidate"  # Replace with the actual candidate name if available
-        cover_letter = generate_cover_letter(job_description, candidate_name)
-        
-        # Display tailored resume and cover letter
-        st.write("### Tailored Resume")
-        st.text_area("Your Tailored Resume", tailored_resume, height=300)
-        
-        st.write("### Tailored Cover Letter")
-        st.text_area("Your Tailored Cover Letter", cover_letter, height=200)
-        
+        if job_description != "Job description not found.":
+            # Tailor the resume with ChatGPT
+            tailored_resume = tailor_resume_with_chatgpt(resume_text, job_description)
+            
+            # Generate a tailored cover letter with ChatGPT
+            candidate_name = "Candidate"  # Replace with the actual candidate name if available
+            cover_letter = generate_cover_letter_with_chatgpt(job_description, candidate_name)
+            
+            # Display tailored resume and cover letter
+            st.write("### Tailored Resume")
+            st.text_area("Your Tailored Resume", tailored_resume, height=300)
+            
+            st.write("### Tailored Cover Letter")
+            st.text_area("Your Tailored Cover Letter", cover_letter, height=200)
+        else:
+            st.write("Could not retrieve the job description. Please check the URL.")
     else:
         st.write("Please upload your resume and enter a job posting URL.")
-
