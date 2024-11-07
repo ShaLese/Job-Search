@@ -10,14 +10,32 @@ openai.api_key = "YOUR_OPENAI_API_KEY"
 # Function to extract job description from a URL
 def get_job_description(job_url):
     headers = {"User-Agent": "Mozilla/5.0"}
-    response = requests.get(job_url, headers=headers)
-    soup = BeautifulSoup(response.text, "html.parser")
     
-    # Here, we're assuming a generic HTML structure for job descriptions
-    job_description = soup.find("div", class_="jobDescriptionContent")
+    try:
+        response = requests.get(job_url, headers=headers)
+        
+        # Check if the response is successful (status code 200)
+        if response.status_code != 200:
+            raise Exception(f"Failed to retrieve job posting. Status code: {response.status_code}")
+        
+        # Print the first 500 characters of the response for debugging purposes
+        # This helps ensure that the page content is retrieved as expected
+        print(response.text[:500])
+        
+        soup = BeautifulSoup(response.text, "html.parser")
+        
+        # Try to find the job description in the expected HTML structure
+        job_description = soup.find("div", class_="jobDescriptionContent")
+        
+        # If the job description is not found, raise an exception
+        if not job_description:
+            raise Exception("Job description not found in the HTML content.")
+        
+        return job_description.text.strip()
     
-    return job_description.text.strip() if job_description else "Job description not found."
-
+    except Exception as e:
+        print(f"Error: {e}")
+        return None
 # Function to parse the uploaded resume
 def parse_resume(uploaded_resume):
     reader = PdfReader(uploaded_resume)
